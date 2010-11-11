@@ -2,6 +2,8 @@ class PDFKit
   
   class Middleware
     
+    ENV_KEY = 'pdfkit.middleware.options'.freeze
+    
     def initialize(app, options = {})
       @app = app
       @options = options
@@ -11,6 +13,9 @@ class PDFKit
       @render_pdf = false
       set_request_to_render_as_pdf(env) if env['PATH_INFO'].match(/\.pdf$/)
       
+      middleware_options = {}
+      env[ENV_KEY] = middleware_options
+      
       status, headers, response = @app.call(env)
       
       request = Rack::Request.new(env)
@@ -19,7 +24,7 @@ class PDFKit
         
         body = translate_paths(body, env)
         
-        pdf = PDFKit.new(body, @options)
+        pdf = PDFKit.new(body, @options.merge(middleware_options))
         body = pdf.to_pdf
         
         # Do not cache PDFs
